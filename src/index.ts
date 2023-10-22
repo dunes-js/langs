@@ -3,4 +3,5 @@
 
 
 
-export * as js from "./js/index.js"
+export * from "./js/index.js"
+export * from "./css/index.js"

@@ -91,6 +91,7 @@ export type NodeType = (
 )
 
 export type SourceType = "cjs" | "esm"
+export type VarType = "Const" | "Var" | "Let" | "Using"
 
 export type AnyNode = (
   | FunctionDeclaration
@@ -250,6 +251,16 @@ export type Consequent = (
   | EmptyExpression
 )
 
+export interface ParOptions extends par.ParserOptions {
+  ast: {
+    programProps: ProgProps
+  }
+}
+
+export interface ProgProps extends par.ProgramProps {
+  sourceType: SourceType
+}
+
 export interface Expression extends par.Node<NodeType> {}
 
 export interface Statement extends Expression {}
@@ -290,7 +301,7 @@ export interface EmptyExpression extends Expression {
 
 export interface VariableDeclaration extends Statement {
   type: "VariableDeclaration"
-  kind: "Var" | "Let" | "Const"
+  kind: Exclude<VarType, "Using">
   declarators: VariableDeclarator[]
 }
 

@@ -1,5 +1,5 @@
-import { par, lex } from "@dunes/lang";
-import { Lexer, type TokenTag, type TokenType } from "../lexer/index.js";
+import { Par } from "@dunes/lang/par";
+import type { TokenTag, TokenType } from "../lexer/index.js";
 import type { 
   AnyDeclaration,
   AnyExportDeclaration,
@@ -57,32 +57,20 @@ import type {
   WhileStatement,
   ClassExpression,
   WithStatement,
-  UsingDeclaration, 
+  UsingDeclaration,
+  ParOptions,
+  VarType, 
 } from "./types.js";
 
 /**
  * @TODO
  * - optional
- * - indexed inside object
  * */
 
-export class Parser extends par.Par<TokenType, AnyNode, {
-  ast: {
-    programProps: {
-      sourceType: SourceType
-    }
-  }
-}, TokenTag> 
-{
-
-	constructor() {
-		super(new Lexer());
-	}
+export class Parser extends Par<TokenType, AnyNode, ParOptions, TokenTag> {
 
   protected override onLoad() {
-    if (!this.hasProperty("sourceType")) {
-      this.setProperty("sourceType", "cjs");
-    }
+    if (!this.hasProperty("sourceType")) this.setProperty("sourceType", "cjs");
   }
 
 	protected override parse(): AnyNode {
@@ -90,86 +78,43 @@ export class Parser extends par.Par<TokenType, AnyNode, {
     let stmt;
 
 		switch (this.type()) {
-
-			case "SlashAsterisk": {
-				stmt = this.parseBlockComment()
-        break;
-			}
-
-      case "Import": {
-        this.setProperty("sourceType", "esm");
-        stmt = this.parseImportDeclaration()
-        break;
-      }
-
-      case "Export": {
-        this.setProperty("sourceType", "esm");
-        stmt = this.parseExportDeclaration()
-        break;
-      }
-
 			case "Var":
 			case "Let":
 			case "Const":
 			case "Async":
 			case "Function":
       case "Using":
-			case "Class": {
-				stmt = this.parseDeclaration();
-        break;
-			}
+			case "Class":  stmt = this.parseDeclaration(); break;
 
-			case "If": {
-        console.log("If?")
-				stmt = this.parseIfStatement();
-        break;
-			}
+			case "If":     stmt = this.parseIfStatement(); break;
+      case "With":   stmt = this.parseWithStatement(); break;
+      case "Try":    stmt = this.parseTryStatement(); break;
+      case "For":    stmt = this.parseAnyForStatement(); break;
+      case "Do":     stmt = this.parseDoWhileStatement(); break;
+      case "While":  stmt = this.parseWhileStatement(); break;
+      case "Switch": stmt = this.parseSwitchStatement(); break;
 
-      case "With": {
-        stmt = this.parseWithStatement();
-        break;
+      case "SlashAsterisk": stmt = this.parseBlockComment(); break;
+
+      case "Import": {
+        this.setProperty("sourceType", "esm");
+        stmt = this.parseImportDeclaration(); break;
       }
 
-      case "Try": {
-        stmt = this.parseTryStatement();
-        break;
-      }
-
-      case "For": {
-        stmt = this.parseAnyForStatement()
-        break;
-      }
-
-      case "Do": {
-        stmt = this.parseDoWhileStatement()
-        break;
-      }
-
-      case "While": {
-        stmt = this.parseWhileStatement()
-        break;
-      }
-
-      case "Switch": {
-        stmt = this.parseSwitchStatement()
-        break;
+      case "Export": {
+        this.setProperty("sourceType", "esm");
+        stmt = this.parseExportDeclaration(); break;
       }
 
       case "Return": {
-        this.eat();
-        this.trim();
-        stmt = this.new("ReturnStatement", {
-          node: this.parseExpression()
-        });
+        this.eatTrim();
+        stmt = this.new("ReturnStatement", {node: this.parseExpression()});
         break;
       }
 
       case "Throw": {
-        this.eat();
-        this.trim();
-        stmt = this.new("ThrowStatement", {
-          node: this.parseExpression()
-        });
+        this.eatTrim();
+        stmt = this.new("ThrowStatement", {node: this.parseExpression()});
         break;
       }
 
@@ -224,37 +169,6 @@ export class Parser extends par.Par<TokenType, AnyNode, {
     return this.new("LineComment", {content});
   }
 
-  // ----- Body
-
-  protected parseBlock(): BlockStatement {
-    this.eatTrim();
-    const body: AnyNode[] = [];
-    while (this.willContinue() && this.isnt("CloseBracket")) {
-      body.push(this.parse());
-      this.trim();
-    }
-    this.expect("CloseBracket", "Expected bracket to end block");
-    this.trimsemi();
-    return this.new("BlockStatement", {body: body});
-  }
-
-  protected parseConsequent(): Consequent {
-    if (this.is("OpenBracket")) {
-      return this.parseBlock();
-    }
-    if (this.is("Semicolon")) {
-      this.eat();
-      return this.new("EmptyExpression", {});
-    }
-    return this.parseExpressionStatement();
-  }
-
-  protected parseExpressionStatement(): ExpressionStatement {
-    let stmt = this.new("ExpressionStatement", {expression: this.parseExpression()});
-    this.trimsemi();
-    return stmt;
-  }
-
   // ===== DECLARATION =====
 
   protected parseDeclaration(): AnyDeclaration {
@@ -306,7 +220,7 @@ export class Parser extends par.Par<TokenType, AnyNode, {
     return this.new("VariableDeclaration", {kind, declarators});
   }
 
-  protected parseVarDeclarators(kind: "Const" | "Var" | "Let" | "Using"): VariableDeclarator[] {
+  protected parseVarDeclarators(kind: VarType): VariableDeclarator[] {
     const declarators: VariableDeclarator[] = [];
     while(this.willContinue() && !this.isAny("Comma", "Semicolon")) {
       const id = this.parseAssignee();
@@ -548,6 +462,26 @@ export class Parser extends par.Par<TokenType, AnyNode, {
 	}
 
   // ===== STATEMENT =====
+
+  // ----- Body
+
+  protected parseBlock(): BlockStatement {
+    this.eatTrim();
+    const body: AnyNode[] = [];
+    while (this.willContinue() && this.isnt("CloseBracket")) {
+      body.push(this.parse());
+      this.trim();
+    }
+    this.expect("CloseBracket", "Expected bracket to end block");
+    this.trimsemi();
+    return this.new("BlockStatement", {body: body});
+  }
+
+  protected parseExpressionStatement(): ExpressionStatement {
+    let stmt = this.new("ExpressionStatement", {expression: this.parseExpression()});
+    this.trimsemi();
+    return stmt;
+  }
 
   // ----- For Loop
   
@@ -1091,7 +1025,7 @@ export class Parser extends par.Par<TokenType, AnyNode, {
                 while (tokens.length && ["Br", "Tab", "Space"].includes(tokens[0]!.type))  {
                   tokens.shift();
                 }
-                return (tokens[0] as lex.Token<TokenType>)!.type === "Arrow";
+                return (tokens[0] as any)!.type === "Arrow";
               }
               else depth--;
             }
@@ -1685,6 +1619,17 @@ export class Parser extends par.Par<TokenType, AnyNode, {
     this.expect("CloseParen", "Expected parenthesis to close function params");
     this.trim();
     return params;
+  }
+
+  protected parseConsequent(): Consequent {
+    if (this.is("OpenBracket")) {
+      return this.parseBlock();
+    }
+    if (this.is("Semicolon")) {
+      this.eat();
+      return this.new("EmptyExpression", {});
+    }
+    return this.parseExpressionStatement();
   }
 
 
