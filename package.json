@@ -1,0 +1,34 @@
+{
+  "name": "@dunes/langs",
+  "version": "0.9.1",
+  "type": "module",
+  "license": "MIT",
+  "main": "./lib/index.js",
+  "types": "./lib/index.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/omarfkuri/dunes.git"
+  },
+  "exports": {
+    "./js": {
+      "main": "./lib/js/index.js",
+      "import": "./lib/js/index.js",
+      "types": "./lib/js/index.d.ts"
+    }
+  },
+  "keywords": [
+    "javascript",
+    "random",
+    "tools",
+    "typescript"
+  ],
+  "author": "Omar <omarfkuri@gmail.com>",
+  "scripts": {
+    "build": "rm -rf lib && tsc && npm version patch",
+    "test": "ts-node test"
+  },
+  "dependencies": {
+    "@dunes/lang": "^0.9.1",
+    "@types/node": "^20.8.5"
+  }
+}
