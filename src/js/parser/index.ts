@@ -125,10 +125,8 @@ export class Parser extends Par<TokenType, AnyNode, ParOptions, TokenTag> {
 
 			default: {
         if (this.is("Await") && this.lookAhead(tokens => {
-          tokens.shift();
-          while (["Br", "Tab", "Space"].includes(tokens[0]!.type)) 
-            tokens.shift();
-          return tokens[0]!.type === "Using";
+          tokens.eatTrim();
+          return tokens.is("Using");
         })) {
           this.eatTrim();
           return this.parseUsingDeclaration(false);
@@ -1014,32 +1012,27 @@ export class Parser extends Par<TokenType, AnyNode, ParOptions, TokenTag> {
       case "OpenParen": {
         const arrow = this.lookAhead((tokens) => {
           let depth = 0;
-
-          while (tokens.length) {
-            if (tokens[0]!.type === "OpenParen") {
+          while (tokens.willContinue()) {
+            if (tokens.if("OpenParen")) {
               depth++;
             }
-            else if (tokens[0]!.type === "CloseParen") {
-              tokens.shift();
+            else if (tokens.if("CloseParen")) {
               if (depth === 1) {
-                while (tokens.length && ["Br", "Tab", "Space"].includes(tokens[0]!.type))  {
-                  tokens.shift();
+                while (tokens.willContinue() && tokens.has("WhiteSpace"))  {
+                  tokens.eat();
                 }
-                return (tokens[0] as any)!.type === "Arrow";
+                return tokens.is("Arrow");
               }
               else depth--;
             }
-            tokens.shift();
+            tokens.eat();
           }
-
           return false;
         })
         if (arrow) {
           return this.parseArrowFunctionExpression(false);
         }
-
-        this.eat();
-        this.trim();
+        this.eatTrim();
         const node = this.parseExpression();
         this.trim();
 
@@ -1635,20 +1628,11 @@ export class Parser extends Par<TokenType, AnyNode, ParOptions, TokenTag> {
 
   // ===== TOOLS ===== 
 
-  protected trim() {
-    while (this.willContinue() && this.has("WhiteSpace")) this.eat();
-  }
-
   protected trimsemi() {
     this.trim();
     while (this.willContinue() && this.is("Semicolon")) {
       this.eatTrim();
     }
-  }
-
-  protected eatTrim() {
-    this.eat();
-    this.trim()
   }
 
   protected cook(raw: string): string {

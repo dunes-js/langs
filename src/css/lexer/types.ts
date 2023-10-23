@@ -1,17 +1,34 @@
 import type { lex } from "@dunes/lang";
 
 
-export type TokenType = lex.TType<(
+export type TokenType = lex.TknType<(
   | "At"
   | "Unknown"
   | "Identifier"
   | "ClassName"
-  | "Wildcard"
+  | "IdName"
   | "Number"
+  | "HashValue"
   | "String"
   
   | "Media"
   | "KeyFrames"
+  
+  | "More"
+  
+  | "CaretEquals"
+  | "AsteriskEquals"
+  | "Plus"
+  | "PipeEquals"
+  | "DollarEquals"
+  | "TildeEquals"
+  | "Equals"
+
+  | "Wildcard"
+  | "Caret"
+  | "Pipe"
+  | "Dollar"
+  | "Tilde"
 
   | "Br"
   | "Period"
@@ -31,8 +48,8 @@ export type TokenType = lex.TType<(
   | "OpenSquare"
   | "CloseSquare"
 )>
-export type TokenTag = (
+export type TokenTag = lex.TagType<(
   | "Word"
-  | "WhiteSpace"
   | "KeyWord"
-)
+  | "Operator"
+)>

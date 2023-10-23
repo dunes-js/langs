@@ -1,13 +1,22 @@
 
-* { box-sizing: border-box }
-
-@media (prefers-color-scheme: dark) {
-  .my-class {
-    color: red;
-  }
-}
-
-body {
+body, .a:jaja(2) i {
   width: 100%;
   height: 100px;
+}
+
+@media a, screen and (mw: 2px) {
+  
+  body, .a:jaja(2) + i {
+    width: 100%;
+    height: #000a, linear(
+      3, 4, 45deg
+    )  
+    !;}
+}
+
+
+#main[
+  type ][  aaaa *="ssss"  ] {
+    font-family: My Font Family;
+    border: 1px solid black;
 }

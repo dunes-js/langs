@@ -9,11 +9,11 @@ export class Lexer extends lex.Lex<TokenType, TokenTag> {
     if (this.is('"')) {
       const chars: lex.Char[] = [this.eat()];
 
-      while (!this.finished() && !this.is('"')) {
+      while (this.willContinue() && !this.is('"')) {
         const val = this.eat();
         chars.push(val);
         if (val.value === '\\') {
-          if (this.finished()) {
+          if (!this.willContinue()) {
             throw "Expected character after escape";
           }
           chars.push(this.eat());
@@ -25,11 +25,11 @@ export class Lexer extends lex.Lex<TokenType, TokenTag> {
     if (this.is("'")) {
       const chars: lex.Char[] = [this.eat()];
 
-      while (!this.finished() && !this.is("'")) {
+      while (this.willContinue() && !this.is("'")) {
         const val = this.eat();
         chars.push(val);
         if (val.value === '\\') {
-          if (this.finished()) {
+          if (!this.willContinue()) {
             throw "Expected character after escape";
           }
           chars.push(this.eat());
@@ -40,7 +40,7 @@ export class Lexer extends lex.Lex<TokenType, TokenTag> {
 
     if (this.isLetter()) {
       const chars: lex.Char[] = [this.eat()];
-      while (!this.finished() && (
+      while (this.willContinue() && (
         this.isLetter() || this.match(/[0-9]|_|-/)
       )) {
         chars.push(this.eat());
@@ -52,7 +52,7 @@ export class Lexer extends lex.Lex<TokenType, TokenTag> {
       const at = this.eat();
       if (this.isLetter()) {
         const chars: lex.Char[] = [at];
-        while (!this.finished() && (
+        while (this.willContinue() && (
           this.isLetter() || this.match(/[0-9]|_|-/)
         )) {
           chars.push(this.eat());
@@ -72,7 +72,7 @@ export class Lexer extends lex.Lex<TokenType, TokenTag> {
       const period = this.eat();
       if (this.isLetter()) {
         const chars: lex.Char[] = [period];
-        while (!this.finished() && (
+        while (this.willContinue() && (
           this.isLetter() || this.match(/[0-9]|_|-/)
         )) {
           chars.push(this.eat());
@@ -82,19 +82,78 @@ export class Lexer extends lex.Lex<TokenType, TokenTag> {
       return this.new("Period", period)
     }
 
+    if (this.is("#")) {
+      const hash = this.eat();
+      if (this.isLetter()) {
+        const chars: lex.Char[] = [hash];
+        while (this.willContinue() && (
+          this.isLetter() || this.match(/[0-9]|_|-/)
+        )) {
+          chars.push(this.eat());
+        }
+        return this.new("IdName", ...chars);
+      }
+      if (!this.match(/ |\t|\n/)) {
+        const chars: lex.Char[] = [hash];
+        while (this.willContinue() && (
+          this.isLetter() || this.match(/[0-9]|_|-/)
+        )) {
+          chars.push(this.eat());
+        }
+        return this.new("HashValue", ...chars);
+      }
+      return this.new("Hash", hash)
+    }
+
     if (this.match(/[0-9]/)) {
       const chars: lex.Char[] = [this.eat()];
-      while (!this.finished() && this.match(/[0-9]/)) {
+      while (this.willContinue() && this.match(/[0-9]/)) {
         chars.push(this.eat());
       }
       return this.new("Number", ...chars);
     }
 
+    if (this.is("~")) {
+      const tilde = this.eat();
+      if (this.is("="))
+        return this.new("TildeEquals", tilde, this.eat());
+      return this.new("Tilde", tilde);
+    }
+
+    if (this.is("$")) {
+      const dollar = this.eat();
+      if (this.is("="))
+        return this.new("DollarEquals", dollar, this.eat());
+      return this.new("Dollar", dollar);
+    }
+
+    if (this.is("^")) {
+      const caret = this.eat();
+      if (this.is("="))
+        return this.new("CaretEquals", caret, this.eat());
+      return this.new("Caret", caret);
+    }
+
+    if (this.is("|")) {
+      const pipe = this.eat();
+      if (this.is("="))
+        return this.new("PipeEquals", pipe, this.eat());
+      return this.new("Pipe", pipe);
+    }
+
+    if (this.is("*")) {
+      const pipe = this.eat();
+      if (this.is("="))
+        return this.new("AsteriskEquals", pipe, this.eat());
+      return this.new("Wildcard", pipe);
+    }
+
 
     switch(this.value()) {
       case '@': return this.new("At", this.eat());
-      case '*': return this.new("Wildcard", this.eat());
       case '%': return this.new("Percent", this.eat());
+      case '*': return this.new("Wildcard", this.eat());
+      case '=': return this.new("Equals", this.eat());
 
       case " ": return this.new("Space", this.eat()).setTag("WhiteSpace");
       case"\n": return this.new("Br",    this.eat()).setTag("WhiteSpace");
@@ -102,7 +161,8 @@ export class Lexer extends lex.Lex<TokenType, TokenTag> {
       case'\\': return this.new("BackSlash", this.eat());
 
       case "!": return this.new("Exclamation", this.eat());
-      case "#": return this.new("Hash", this.eat());
+      case ">": return this.new("More", this.eat()).setTag("Operator");
+      case "+": return this.new("Plus", this.eat()).setTag("Operator");
 
       case ";": return this.new("Semicolon", this.eat());
       case ":": return this.new("Colon", this.eat());

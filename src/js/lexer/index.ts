@@ -9,11 +9,11 @@ export class Lexer extends lex.Lex<TokenType, TokenTag> {
     if (this.is('"')) {
       const chars: lex.Char[] = [this.eat()];
 
-      while (!this.finished() && !this.is('"')) {
+      while (this.willContinue() && !this.is('"')) {
         const val = this.eat();
         chars.push(val);
         if (val.value === '\\') {
-          if (this.finished()) {
+          if (!this.willContinue()) {
             throw "Expected character after escape";
           }
           chars.push(this.eat());
@@ -25,11 +25,11 @@ export class Lexer extends lex.Lex<TokenType, TokenTag> {
     if (this.is("'")) {
       const chars: lex.Char[] = [this.eat()];
 
-      while (!this.finished() && !this.is("'")) {
+      while (this.willContinue() && !this.is("'")) {
         const val = this.eat();
         chars.push(val);
         if (val.value === '\\') {
-          if (this.finished()) {
+          if (!this.willContinue()) {
             throw "Expected character after escape";
           }
           chars.push(this.eat());
@@ -44,7 +44,7 @@ export class Lexer extends lex.Lex<TokenType, TokenTag> {
 
 		if (this.isLetter() || this.is("$")) {
 			const chars: lex.Char[] = [this.eat()];
-			while (!this.finished() && (
+			while (this.willContinue() && (
         this.isLetter() || this.is("$") || this.match(/[0-9]|_/)
       )) {
 				chars.push(this.eat());
@@ -96,7 +96,7 @@ export class Lexer extends lex.Lex<TokenType, TokenTag> {
 
 		if (this.match(/[0-9]/)) {
 			const chars: lex.Char[] = [this.eat()];
-			while (!this.finished() && this.match(/[0-9]/)) {
+			while (this.willContinue() && this.match(/[0-9]/)) {
 				chars.push(this.eat());
 			}
 			return this.new("Number", ...chars);
