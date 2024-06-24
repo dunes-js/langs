@@ -7,13 +7,23 @@
   "types": "./lib/index.d.ts",
   "repository": {
     "type": "git",
-    "url": "git://github.com/omarfkuri/dunes.git"
+    "url": "git://github.com/dunes-js/langs.git"
   },
   "exports": {
     "./js": {
       "main": "./lib/js/index.js",
       "import": "./lib/js/index.js",
       "types": "./lib/js/index.d.ts"
+    },
+    "./xml": {
+      "main": "./lib/xml/index.js",
+      "import": "./lib/xml/index.js",
+      "types": "./lib/xml/index.d.ts"
+    },
+    "./css": {
+      "main": "./lib/css/index.js",
+      "import": "./lib/css/index.js",
+      "types": "./lib/css/index.d.ts"
     }
   },
   "keywords": [
